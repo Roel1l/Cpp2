@@ -2,6 +2,10 @@
 
 #include <vector>
 #include <iterator>
+#include <thread>
+#include <exception>
+#include <utility>
+#include <chrono>
 
 GameController::GameController()
 {
@@ -21,7 +25,7 @@ void GameController::init() {
 
 void GameController::startGame()
 {
-	if (running) {	
+		std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 		sendMessageToClients("\r\n2 Players have been found starting game!\r\n");
 		//ExecutePreparation();
 		clients[0]->get_player().king = true;
@@ -29,16 +33,7 @@ void GameController::startGame()
 		while (running) {
 			continueGame();
 		}
-	}
-	else checkPlayersReady();
-}
 
-void GameController::checkPlayersReady() {
-	if (clients.size() > 1) {
-		if (clients[0]->get_player().name != "" && clients[1]->get_player().name != "") {
-			running = true;
-		}
-	}
 }
 
 void GameController::continueGame()

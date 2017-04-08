@@ -97,11 +97,16 @@ void handle_client(Socket client) // this function runs in a separate thread
 
 		//Hou lijst bij van huidige clients
 		gameController.clients.push_back(client_info);
+		if (gameController.clients.size() == 2) {
+			while (gameController.clients[1]->get_player().name == "") {
+
+			}
+			gameController.startGame();
+		}
 
         while (running) { // game loop
             try {
                 // read first line of request
-				gameController.startGame();
                 std::string cmd;
 			
                 if (socket.readline([&cmd](std::string input) { cmd=input; })) {
