@@ -1,7 +1,7 @@
 #include "GameController.h"
-#include "ClientCommand.h"
-#include "Player.h"
-#include "ClientInfo.h"
+
+#include <vector>
+#include <iterator>
 
 GameController::GameController()
 {
@@ -11,29 +11,86 @@ GameController::~GameController()
 {
 }
 
+void GameController::init() {
+	stacks.initBuildingCards();
+	stacks.initCharacterCards();
+
+	stacks.shuffleBuildingCards();
+	stacks.shuffleCharacterCards();
+}
+
+void GameController::startGame()
+{
+	if (running) {	
+		sendMessageToClients("\r\n2 Players have been found starting game!\r\n");
+		//ExecutePreparation();
+		clients[0]->get_player().king = true;
+		gameStage = CHOOSING_CHARACTERS;
+		while (running) {
+			continueGame();
+		}
+	}
+	else checkPlayersReady();
+}
+
+void GameController::checkPlayersReady() {
+	if (clients.size() > 1) {
+		if (clients[0]->get_player().name != "" && clients[1]->get_player().name != "") {
+			running = true;
+		}
+	}
+}
+
+void GameController::continueGame()
+{
+	switch (gameStage) {
+		case PREPARATION:
+			ExecutePreparation();
+			break;
+		case CHOOSING_CHARACTERS:
+			break;
+		case CALLING_CHARACTERS:
+			break;
+		case USE_CHARACTER:
+			break;
+		case ENDING:
+			break;
+
+	}
+	
+}
+
+void GameController::ExecutePreparation() {
+	for each (std::shared_ptr<ClientInfo> client in clients)
+	{
+		auto &socket = client->get_socket();
+		auto &player = client->get_player();
+		
+		for (int i = 0; i < 4; i++)
+		{
+			player.buildingCards.push_back(stacks.getBuildingCard());
+		}
+		
+		socket.write("\r\nYou have been give 2 pieces of gold and 4 building cards\r\n");
+	}
+}
+
 void GameController::handleClientInput(ClientCommand command)
 {
 	auto clientInfo = command.get_client_info().lock();
 	auto &client = clientInfo->get_socket();
 	auto &player = clientInfo->get_player();
 
-	continueGame(player);
-
 	if (client.is_open()) {
 		client << sendToClient;
 	}
 }
 
-
-void GameController::continueGame(Player &player)
+void GameController::sendMessageToClients(std::string message)
 {
-	if (player.id == currentTurnPlayerId) {
-
+	for each (std::shared_ptr<ClientInfo> client in clients)
+	{
+		auto &socket = client->get_socket();
+		socket.write(message);
 	}
-	else if (player.id < 3)
-		sendToClient = "Waiting for the other player it's not your turn right now";
-	else
-		sendToClient = "2 players are already playing right now please type 'quit' and try reconnecting another time";
 }
-
-

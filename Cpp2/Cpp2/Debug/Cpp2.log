@@ -1,5 +1,9 @@
-﻿  main.cpp
-  GameController.cpp
+﻿  GameController.cpp
+  Generating Code...
+cl : Command line warning D9028: minimal rebuild failure, reverting to normal build
+  Compiling...
+  Player.cpp
+  main.cpp
   Generating Code...
   Cpp2.vcxproj -> C:\Users\Rel\Documents\GitHub\Cpp2\Cpp2\Debug\Cpp2.exe
   Cpp2.vcxproj -> C:\Users\Rel\Documents\GitHub\Cpp2\Cpp2\Debug\Cpp2.pdb (Partial PDB)

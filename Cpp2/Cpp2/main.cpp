@@ -13,7 +13,6 @@
 #include <memory>
 #include <utility>
 #include <chrono>
-using namespace std;
 
 #include "Socket.h"
 #include "Sync_queue.h"
@@ -21,6 +20,9 @@ using namespace std;
 #include "Player.h"
 #include "ClientInfo.h"
 #include "GameController.h"
+
+
+using namespace std;
 
 namespace machiavelli {
     const int tcp_port {1080};
@@ -88,15 +90,20 @@ std::shared_ptr<ClientInfo> init_client_session(Socket client) {
 void handle_client(Socket client) // this function runs in a separate thread
 {
     try {
-        auto client_info = init_client_session(move(client));
+        std::shared_ptr<ClientInfo> client_info = init_client_session(move(client));
         auto &socket = client_info->get_socket();
         auto &player = client_info->get_player();
         socket << "Welcome, " << player.get_name() << ", have fun playing our game!\r\n" << machiavelli::prompt;
 
+		//Hou lijst bij van huidige clients
+		gameController.clients.push_back(client_info);
+
         while (running) { // game loop
             try {
                 // read first line of request
+				gameController.startGame();
                 std::string cmd;
+			
                 if (socket.readline([&cmd](std::string input) { cmd=input; })) {
                     cerr << '[' << socket.get_dotted_ip() << " (" << socket.get_socket() << ") " << player.get_name() << "] " << cmd << "\r\n";
 
@@ -128,10 +135,11 @@ void handle_client(Socket client) // this function runs in a separate thread
     }
 }
 
-
 int main(int argc, const char * argv[])
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); // leak dump enabled
+
+	gameController.init();
 
     // start command consumer thread
     vector<thread> all_threads;

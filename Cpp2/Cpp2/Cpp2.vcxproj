@@ -111,19 +111,26 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="BuildingCard.h" />
+    <ClInclude Include="CharacterCard.h" />
     <ClInclude Include="CircularBuffer.h" />
     <ClInclude Include="ClientCommand.h" />
     <ClInclude Include="ClientInfo.h" />
+    <ClInclude Include="Globals.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Socket.h" />
+    <ClInclude Include="Stacks.h" />
     <ClInclude Include="Sync_queue.h" />
     <ClInclude Include="throw.h" />
     <ClInclude Include="GameController.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BuildingCard.cpp" />
+    <ClCompile Include="CharacterCard.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Socket.cpp" />
+    <ClCompile Include="Stacks.cpp" />
     <ClCompile Include="throw.cpp" />
     <ClCompile Include="GameController.cpp" />
   </ItemGroup>
