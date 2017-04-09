@@ -589,7 +589,7 @@ void GameController::ExecuteEnding() {
 		}
 	}
 
-	sendMessageToClients("\r\nThe game has ended please type 'quit' to quit...", 3);
+	sendMessageToClients("\r\nThe game has ended please type 'quit' to quit...\r\n", 3);
 	running = false;
 }
 
