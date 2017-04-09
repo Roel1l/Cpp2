@@ -45,15 +45,20 @@ private:
 	void PlayerGetGoldOrBuilding(Player & player);
 	void PlayerBuildBuilding(Player & player);
 	void PlayerUsePower(Player & player, CharacterCard characterCard);
+	void PlayerShowStats(Player & player);
+	void ExecuteEnding();
+	int CalculatePoints(Player & player);
 	void sendMessageToClients(std::string message, int playerId);
 	int getAnswerFromPlayer(int amountOfOptions);
 
 	std::pair<std::string, int> playerCommand; //links is het bericht en recht is het playerId
 
+	CharacterCard::CharacterType killedCharacter;
 	Stacks stacks;
 	int currentTurnPlayerId{ 1 };
 	int round{ 0 };
 	bool running{ true };
 	const bool quickChoose{ true };
+	const int buildingsToEndGame{ 1 };
 };
 

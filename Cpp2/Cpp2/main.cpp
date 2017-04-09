@@ -108,6 +108,7 @@ void handle_client(Socket client) // this function runs in a separate thread
 
                     if (cmd == "quit") {
                         socket.write("Bye!\r\n");
+						running = false;
                         break; // out of game loop, will end this thread and close connection
                     }
                     else if (cmd == "quit_server") {
@@ -159,7 +160,7 @@ int main(int argc, const char * argv[])
             });
             this_thread::sleep_for(chrono::milliseconds(100));
 
-			if (gameController.clients.size() == 2 && gameStarted == false) {
+			if (gameController.clients.size() == 2 && !gameStarted) {
 				while (gameController.clients[1]->get_player().name == "" && gameController.clients[0]->get_player().name == "") {
 					//wacht tot beide spelers ready zijn en hun naam hebben ingevuld
 				}

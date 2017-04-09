@@ -26,6 +26,7 @@ public:
 	int gold{ 2 };
 	std::vector<CharacterCard> characterCards;
 	std::vector<BuildingCard> buildingCards;
+	std::vector<BuildingCard> buildingsBuilt;
 	bool king{ false };
 	std::string name;
 private:
