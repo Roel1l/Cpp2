@@ -70,6 +70,7 @@ void GameController::continueGame()
 		case CALLING_CHARACTERS:
 			sendMessageToClients("\r\nIt's time to start calling the characters\r\n", 3);
 			ExecuteCallCharacters();
+			killedCharacter = CharacterCard::CharacterType::None;
 			break;
 		case ENDING:
 			ExecuteEnding();
@@ -370,6 +371,136 @@ void GameController::PlayerBuildBuilding(Player & player) {
 }
 
 void GameController::PlayerUsePower(Player & player, CharacterCard characterCard) {
+	switch (characterCard.characterType) {
+	case CharacterCard::CharacterType::Moordenaar:
+		ExecuteMoordenaar(player);
+		break;
+	case CharacterCard::CharacterType::Dief:
+		ExecuteDief(player);
+		break;
+	case CharacterCard::CharacterType::Magier:
+		ExecuteMagier(player);
+		break;
+	case CharacterCard::CharacterType::Koning:
+		ExecuteKoning(player);
+		break;
+	case CharacterCard::CharacterType::Prediker:
+		ExecutePrediker(player);
+		break;
+	case CharacterCard::CharacterType::Koopman:
+		ExecuteKoopman(player);
+		break;
+	case CharacterCard::CharacterType::Bouwmeester:
+		ExecuteBouwmeester(player);
+		break;
+	case CharacterCard::CharacterType::Condottiere:
+		ExecuteCondottiere(player);
+		break;
+	}
+}
+
+void GameController::ExecuteMoordenaar(Player & player) {
+	sendMessageToClients("\r\nMoordenaar, who would you like to kill?\r\n", player.id);
+	std::string message = "";
+
+	message.append("1: Dief\r\n");
+	message.append("2: Magier\r\n");
+	message.append("3: Koning\r\n");
+	message.append("4: Prediker\r\n");
+	message.append("5: Koopman\r\n");
+	message.append("6: Bouwmeester\r\n");
+	message.append("7: Condotierre\r\n");
+
+	sendMessageToClients(message, player.id);
+
+	int answer = getAnswerFromPlayer(7);
+
+	switch (answer) {
+	case 1:
+		killedCharacter = CharacterCard::CharacterType::Dief;
+		message = " Dief ";
+		break;
+	case 2:
+		killedCharacter = CharacterCard::CharacterType::Magier;
+		message = " Magier ";
+		break;
+	case 3:
+		killedCharacter = CharacterCard::CharacterType::Koning;
+		message = " Koning ";
+		break;
+	case 4:
+		killedCharacter = CharacterCard::CharacterType::Prediker;
+		message = " Prediker ";
+		break;
+	case 5:
+		killedCharacter = CharacterCard::CharacterType::Koopman;
+		message = " Koopman ";
+		break;
+	case 6:
+		killedCharacter = CharacterCard::CharacterType::Bouwmeester;
+		message = " Bouwmeester ";
+		break;
+	case 7:
+		killedCharacter = CharacterCard::CharacterType::Condottiere;
+		message = " Condottiere ";
+		break;
+	}
+
+	sendMessageToClients("\r\nThe" + message + "Has been murdered and can no longer act this turn!\r\n", 3);
+}
+
+void GameController::ExecuteDief(Player & player) {
+	sendMessageToClients("\r\nDief, from whom will you steal?\r\n", player.id);
+
+	std::string message = "";
+	int counter = 0;
+
+	for (int i = CharacterCard::CharacterType::Moordenaar; i != CharacterCard::CharacterType::None; i++)
+	{
+		CharacterCard::CharacterType characterType = static_cast<CharacterCard::CharacterType>(i);
+		if (characterType != CharacterCard::CharacterType::Moordenaar && characterType != killedCharacter) {
+			counter++;
+			message.append(std::to_string(counter) + ": " + characters[i] + "\r\n");	
+		}
+	}
+
+	sendMessageToClients(message, player.id);
+
+	int answer = getAnswerFromPlayer(counter);
+
+	int counter2 = 0;
+
+	for (int i = CharacterCard::CharacterType::Moordenaar; i != CharacterCard::CharacterType::None; i++)
+	{
+		CharacterCard::CharacterType characterType = static_cast<CharacterCard::CharacterType>(i);
+		if (characterType != CharacterCard::CharacterType::Moordenaar && characterType != killedCharacter) {
+			counter2++;
+			if (counter2 == answer) stolenCharacter = characterType;
+		}
+	}
+}
+
+void GameController::ExecuteMagier(Player & player) {
+
+}
+
+void GameController::ExecuteKoning(Player & player) {
+
+}
+
+void GameController::ExecutePrediker(Player & player) {
+
+}
+
+void GameController::ExecuteKoopman(Player & player) {
+
+}
+
+void GameController::ExecuteBouwmeester(Player & player) {
+
+}
+
+void GameController::ExecuteCondottiere(Player & player) {
 
 }
 

@@ -1,6 +1,14 @@
-﻿  main.cpp
-  GameController.cpp
+﻿  GameController.cpp
 c:\users\rel\documents\github\cpp2\cpp2\cpp2\gamecontroller.cpp(36): warning C4018: '>=': signed/unsigned mismatch
+  CharacterCard.cpp
   Generating Code...
+  Compiling...
+  main.cpp
+  Stacks.cpp
+c:\users\rel\documents\github\cpp2\cpp2\cpp2\stacks.cpp(55): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+c:\users\rel\documents\github\cpp2\cpp2\cpp2\stacks.cpp(61): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+  Generating Code...
+  Skipping... (no relevant changes detected)
+  Player.cpp
   Cpp2.vcxproj -> C:\Users\Rel\Documents\GitHub\Cpp2\Cpp2\Debug\Cpp2.exe
   Cpp2.vcxproj -> C:\Users\Rel\Documents\GitHub\Cpp2\Cpp2\Debug\Cpp2.pdb (Partial PDB)

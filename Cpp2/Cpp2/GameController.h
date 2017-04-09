@@ -22,8 +22,6 @@ public:
 
 	void handleClientInput(ClientCommand command);
 
-
-	
 	void startGame();
 
 	void continueGame();
@@ -44,21 +42,33 @@ private:
 	void ExecutePlayerTurn(Player & player, CharacterCard characterCard);
 	void PlayerGetGoldOrBuilding(Player & player);
 	void PlayerBuildBuilding(Player & player);
+
 	void PlayerUsePower(Player & player, CharacterCard characterCard);
+	void ExecuteMoordenaar(Player & player);
+	void ExecuteDief(Player & player);
+	void ExecuteMagier(Player & player);
+	void ExecuteKoning(Player & player);
+	void ExecutePrediker(Player & player);
+	void ExecuteKoopman(Player & player);
+	void ExecuteBouwmeester(Player & player);
+	void ExecuteCondottiere(Player & player);
+
 	void PlayerShowStats(Player & player);
 	void ExecuteEnding();
 	int CalculatePoints(Player & player);
 	void sendMessageToClients(std::string message, int playerId);
 	int getAnswerFromPlayer(int amountOfOptions);
 
-	std::pair<std::string, int> playerCommand; //links is het bericht en recht is het playerId
+	std::pair<std::string, int> playerCommand; //links is het bericht en rechts is het playerId van wie het bericht komt
 
-	CharacterCard::CharacterType killedCharacter;
+	CharacterCard::CharacterType killedCharacter{ CharacterCard::CharacterType::None };
+	CharacterCard::CharacterType stolenCharacter{ CharacterCard::CharacterType::None };
 	Stacks stacks;
 	int currentTurnPlayerId{ 1 };
 	int round{ 0 };
 	bool running{ true };
 	const bool quickChoose{ true };
 	const int buildingsToEndGame{ 1 };
+	const std::vector<std::string> characters {"Moordenaar", "Dief", "Magier", "Koning", "Prediker", "Koopman", "Bouwmeester", "Condottiere", "None"};
 };
 
