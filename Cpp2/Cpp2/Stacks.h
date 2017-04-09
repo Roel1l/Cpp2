@@ -22,6 +22,8 @@ public:
 
 	int getAmountOfCharacterCards();
 
+	void discardBuildingCard(BuildingCard b);
+
 	CharacterCard getCharacterCard(int optionId);
 
 	std::string removeCharacterCard(int optionId);

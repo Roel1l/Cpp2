@@ -13,6 +13,7 @@ public:
 	enum Color { GEEL, GROEN, BLAUW, ROOD, LILA };
 	int cost;
 	std::string name;
+	std::string stringColor;
 	Color color;
 
 };

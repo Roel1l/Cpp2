@@ -19,6 +19,7 @@ BuildingCard::BuildingCard(const std::string name, const int cost, std::string c
 	else if (colorIn == "lila") {
 		color = LILA;
 	}
+	stringColor = colorIn;
 }
 
 

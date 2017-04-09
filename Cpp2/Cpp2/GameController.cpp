@@ -1,5 +1,6 @@
 #include "GameController.h"
 
+#include <deque>
 #include <vector>
 #include <iterator>
 #include <thread>
@@ -30,7 +31,9 @@ void GameController::startGame()
 		ExecutePreparation();
 		clients[0]->get_player().king = true;
 		gameStage = CHOOSING_CHARACTERS;
-		continueGame();
+		while (running) {
+			continueGame();
+		}
 }
 
 void GameController::continueGame()
@@ -59,12 +62,13 @@ void GameController::continueGame()
 			break;
 		case CALLING_CHARACTERS:
 		{
-			int i = 3;
+			sendMessageToClients("\r\nIt's time to start calling the characters\r\n", 3);
+			ExecuteCallCharacters();
+			gameStage = ENDING;
 		}
 			break;
-		case USE_CHARACTER:
-			break;
 		case ENDING:
+			running = false;
 			break;
 
 	}
@@ -140,6 +144,174 @@ void GameController::ExecuteChooseCharactersQuick() {
 	}
 }
 
+void GameController::ExecuteCallCharacters() {
+	int callOrderId = 1;
+	while (callOrderId < 9) {
+		for each (std::shared_ptr<ClientInfo> client in clients) {
+			auto &player = client->get_player();
+
+			std::vector<CharacterCard>::iterator it;
+
+			for (it = player.characterCards.begin(); it != player.characterCards.end(); it++)
+			{
+				if (it->id == callOrderId) {
+					ExecutePlayerTurn(player, (*it));
+				}
+			}
+
+		}
+		callOrderId++;
+	}
+
+	sendMessageToClients("Done calling the characters. Ending round...\r\n", 3);
+}
+
+void GameController::ExecutePlayerTurn(Player & player, CharacterCard characterCard) {
+	currentTurnPlayerId = player.id;
+	std::string message = "It's " + player.name;
+	message.append("'s turn who has the " + characterCard.name);
+	sendMessageToClients(message, 3);
+
+	bool part1Over = false;
+	bool part2Over = false;
+	bool characterPowerUsed = false;
+	bool tookGoldOrBuilding = false;
+	bool buildBuilding = false;
+
+	while (!part1Over) {
+		sendMessageToClients("\r\nWhat would you like to do?\r\n", player.id);
+		message = "";
+		int amountOfOptions = 0;
+		int usePower = 0;
+		int getGoldOrBuilding = 0;
+
+		if (!characterPowerUsed)
+		{
+			amountOfOptions++;
+			message.append(std::to_string(amountOfOptions) + ": Use character power.\r\n");
+			usePower = amountOfOptions;
+		}
+		if (!tookGoldOrBuilding)
+		{
+			amountOfOptions++;
+			message.append(std::to_string(amountOfOptions) + ": Receive 2 gold or receive a building card.\r\n");
+			getGoldOrBuilding = amountOfOptions;
+		}
+		
+		sendMessageToClients(message, player.id);
+		int answer = getAnswerFromPlayer(amountOfOptions);
+
+		if (answer == usePower) {
+			PlayerUsePower(player, characterCard);
+			characterPowerUsed = true;
+		}
+		if (answer == getGoldOrBuilding) {
+			PlayerGetGoldOrBuilding(player);
+			tookGoldOrBuilding = true;
+			part1Over = true;
+		}
+
+	}
+
+	while (!part2Over) {
+		sendMessageToClients("\r\nWhat would you like to do?\r\n", player.id);
+		message = "";
+		int amountOfOptions = 0;
+		int usePower = 0;
+		int build = 0;
+		int endTurn = 0;
+
+		if (!characterPowerUsed)
+		{
+			amountOfOptions++;
+			message.append(std::to_string(amountOfOptions) + ": Use character power.\r\n");
+			usePower = amountOfOptions;
+		}
+		if (!buildBuilding)
+		{
+			amountOfOptions++;
+			message.append(std::to_string(amountOfOptions) + ": Build a building\r\n");
+			build = amountOfOptions;
+		}
+
+		amountOfOptions++;
+		message.append(std::to_string(amountOfOptions) + ": End turn\r\n");
+		endTurn = amountOfOptions;
+
+		sendMessageToClients(message, player.id);
+		int answer = getAnswerFromPlayer(amountOfOptions);
+
+		if (answer == usePower) {
+			PlayerUsePower(player, characterCard);
+			characterPowerUsed = true;
+		}
+		if (answer == build) {
+			PlayerBuildBuilding(player);
+			buildBuilding = true;
+		}
+		if (answer == endTurn) {
+			part2Over = true;
+		}
+		if (characterPowerUsed && buildBuilding) {
+			part2Over = true;
+		}
+	}
+	
+	sendMessageToClients(player.name + " finished his turn as the " + characterCard.name + "\r\n", 3);
+}
+
+void GameController::PlayerGetGoldOrBuilding(Player & player) {
+	std::string message = "\r\nWhich one would you like?\r\n";
+	sendMessageToClients(message, player.id);
+	message = "1: receive gold\r\n";
+	message += "2: receive building\r\n";
+	sendMessageToClients(message, player.id);
+
+	int answer = getAnswerFromPlayer(2);
+
+	if (answer == 1) {
+		player.gold += 2;
+		sendMessageToClients("\r\n" + player.name + " received 2 gold!\r\n", 3);
+	}
+	else if (answer == 2) {
+		BuildingCard A = stacks.getBuildingCard();
+		BuildingCard B = stacks.getBuildingCard();
+
+		message = "\r\n1: " + A.name;
+		message.append(" color: " + A.stringColor);
+		message.append(" cost: " + std::to_string(A.cost));
+		message.append("\r\n");
+		
+		message.append("2: " + B.name);
+		message.append(" color: " + B.stringColor);
+		message.append(" cost: " + std::to_string(B.cost));
+		message.append("\r\n");
+
+		sendMessageToClients(message, player.id);
+
+		int answertwo = getAnswerFromPlayer(2);
+
+		if (answertwo == 1) {
+			player.buildingCards.push_back(A);
+			stacks.discardBuildingCard(B);
+		}
+		else if (answertwo == 2) {
+			player.buildingCards.push_back(B);
+			stacks.discardBuildingCard(A);
+		}
+
+		sendMessageToClients("\r\n" + player.name + " took a building card from the stack!\r\n", 3);
+	}
+}
+
+void GameController::PlayerBuildBuilding(Player & player) {
+
+}
+
+void GameController::PlayerUsePower(Player & player, CharacterCard characterCard) {
+
+}
+
 void GameController::handleClientInput(ClientCommand command)
 {
 	auto clientInfo = command.get_client_info().lock();
@@ -152,7 +324,7 @@ void GameController::handleClientInput(ClientCommand command)
 	}
 	else {
 		if (client.is_open()) {
-			client << "It's not your turn right now waiting for the other player to finish his turn...";
+			client << "It's not your turn right now waiting for the other player to finish his turn...\r\n";
 		}
 	}
 }
@@ -166,7 +338,6 @@ inline bool isInteger(const std::string & s)
 
 	return (*p == 0);
 }
-
 
 int GameController::getAnswerFromPlayer(int amountOfOptions) {
 	bool waiting = true;

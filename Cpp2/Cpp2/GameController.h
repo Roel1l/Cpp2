@@ -31,7 +31,7 @@ public:
 	std::vector<std::shared_ptr<ClientInfo>> clients;
 
 private:
-	enum GameStage {PREPARATION, CHOOSING_CHARACTERS, CALLING_CHARACTERS, USE_CHARACTER, ENDING};
+	enum GameStage {PREPARATION, CHOOSING_CHARACTERS, CALLING_CHARACTERS, ENDING};
 
 	GameStage gameStage{ PREPARATION };
 
@@ -40,6 +40,11 @@ private:
 	void ExecutePreparation();
 	void ExecuteChooseCharacters(int counter);
 	void ExecuteChooseCharactersQuick();
+	void ExecuteCallCharacters();
+	void ExecutePlayerTurn(Player & player, CharacterCard characterCard);
+	void PlayerGetGoldOrBuilding(Player & player);
+	void PlayerBuildBuilding(Player & player);
+	void PlayerUsePower(Player & player, CharacterCard characterCard);
 	void sendMessageToClients(std::string message, int playerId);
 	int getAnswerFromPlayer(int amountOfOptions);
 

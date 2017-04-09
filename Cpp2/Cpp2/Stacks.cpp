@@ -89,6 +89,10 @@ int Stacks::getAmountOfCharacterCards() {
 	return characterCardStack.size();
 }
 
+void Stacks::discardBuildingCard(BuildingCard b) {
+	discardedBuildingCardStack.push_back(b);
+}
+
 CharacterCard Stacks::getCharacterCard(int optionId) //gebruik hier het option id van getCharacterCardOptions()
 {
 	CharacterCard returnCard = characterCardStack[optionId - 1];
