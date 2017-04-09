@@ -280,7 +280,7 @@ void GameController::ExecutePlayerTurn(Player & player, CharacterCard characterC
 		}
 	}
 	
-	sendMessageToClients(player.name + " finished his turn as the " + characterCard.name + "\r\n", 3);
+	sendMessageToClients("\r\n" + player.name + " finished his turn as the " + characterCard.name + "\r\n", 3);
 }
 
 void GameController::PlayerGetGoldOrBuilding(Player & player) {
@@ -468,14 +468,17 @@ void GameController::ExecuteDief(Player & player) {
 
 	int answer = getAnswerFromPlayer(counter);
 
-	int counter2 = 0;
+	counter = 0;
 
 	for (int i = CharacterCard::CharacterType::Moordenaar; i != CharacterCard::CharacterType::None; i++)
 	{
 		CharacterCard::CharacterType characterType = static_cast<CharacterCard::CharacterType>(i);
 		if (characterType != CharacterCard::CharacterType::Moordenaar && characterType != killedCharacter) {
-			counter2++;
-			if (counter2 == answer) stolenCharacter = characterType;
+			counter++;
+			if (counter == answer) {
+				stolenCharacter = characterType;
+				sendMessageToClients("\r\nThe Dief stole from the " + characters[i] + "\r\n", 3);
+			}
 		}
 	}
 }
@@ -627,7 +630,7 @@ void GameController::handleClientInput(ClientCommand command)
 	}
 	else {
 		if (client.is_open()) {
-			client << "It's not your turn right now waiting for the other player to finish his turn...\r\n";
+			client << "\r\nIt's not your turn right now waiting for the other player to finish his turn...\r\n";
 		}
 	}
 }
