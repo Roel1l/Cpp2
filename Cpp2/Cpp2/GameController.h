@@ -11,6 +11,7 @@
 #include "BuildingCard.h"
 #include "CharacterCard.h"
 
+
 class GameController
 {
 public:
@@ -20,6 +21,9 @@ public:
 	void init();
 
 	void handleClientInput(ClientCommand command);
+
+
+	
 	void startGame();
 
 	void continueGame();
@@ -34,14 +38,17 @@ private:
 	void switchTurns() { currentTurnPlayerId = currentTurnPlayerId == 1 ? 2 : 1; };
 
 	void ExecutePreparation();
-	void checkPlayersReady();
-	void sendMessageToClients(std::string message);
+	void ExecuteChooseCharacters(int counter);
+	void ExecuteChooseCharactersQuick();
+	void sendMessageToClients(std::string message, int playerId);
+	int getAnswerFromPlayer(int amountOfOptions);
+
+	std::pair<std::string, int> playerCommand; //links is het bericht en recht is het playerId
 
 	Stacks stacks;
 	int currentTurnPlayerId{ 1 };
-	std::string sendToClient;
-	std::pair<bool, int> expectingInput;
-	bool bothPlayersRead{ false };
-	bool running{ false };
+	int round{ 0 };
+	bool running{ true };
+	const bool quickChoose{ true };
 };
 

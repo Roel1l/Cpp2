@@ -18,6 +18,14 @@ public:
 
 	BuildingCard getBuildingCard();
 
+	std::string getCharacterCardOptions();
+
+	int getAmountOfCharacterCards();
+
+	CharacterCard getCharacterCard(int optionId);
+
+	std::string removeCharacterCard(int optionId);
+
 private:
 	std::deque<BuildingCard> buildingCardStack;
 	std::deque<CharacterCard> characterCardStack;

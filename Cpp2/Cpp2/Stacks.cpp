@@ -67,3 +67,44 @@ BuildingCard Stacks::getBuildingCard() {
 	buildingCardStack.pop_front();
 	return returnValue;
 }
+
+std::string Stacks::getCharacterCardOptions()
+{
+	std::string options = "";
+	
+	deque<CharacterCard>::iterator it;
+
+	for (it = characterCardStack.begin(); it != characterCardStack.end(); it++)
+	{
+		options.append(std::to_string(it - characterCardStack.begin() + 1));
+		options.append(": ");
+		options.append(it->name);
+		options.append("\r\n");
+	}
+
+	return options;
+}
+
+int Stacks::getAmountOfCharacterCards() {
+	return characterCardStack.size();
+}
+
+CharacterCard Stacks::getCharacterCard(int optionId) //gebruik hier het option id van getCharacterCardOptions()
+{
+	CharacterCard returnCard = characterCardStack[optionId - 1];
+	characterCardStack.erase(characterCardStack.begin() + optionId - 1);
+	return returnCard;
+}
+
+std::string Stacks::removeCharacterCard(int optionId) { // optionId = 0 to remove top card
+	if (optionId == 0) {
+		discardedCharacterCardStack.push_back(characterCardStack.front());
+		characterCardStack.pop_front();
+	}
+	else {
+		discardedCharacterCardStack.push_back(characterCardStack[optionId - 1]);
+		characterCardStack.erase(characterCardStack.begin() + optionId - 1);
+	}
+
+	return discardedCharacterCardStack.back().name;
+}

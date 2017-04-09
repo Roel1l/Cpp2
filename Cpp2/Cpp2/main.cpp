@@ -52,7 +52,7 @@ void consume_command() // runs in its own thread
 					else {
 						client << "Waiting for second player to connect please hold on...\r\n";
 					}
-                    client << machiavelli::prompt;
+                   // client << machiavelli::prompt;
                 } catch (const exception& ex) {
                     cerr << "*** exception in consumer thread for player " << player.get_name() << ": " << ex.what() << '\n';
                     if (client.is_open()) {
@@ -97,12 +97,6 @@ void handle_client(Socket client) // this function runs in a separate thread
 
 		//Hou lijst bij van huidige clients
 		gameController.clients.push_back(client_info);
-		if (gameController.clients.size() == 2) {
-			while (gameController.clients[1]->get_player().name == "") {
-
-			}
-			gameController.startGame();
-		}
 
         while (running) { // game loop
             try {
@@ -153,6 +147,8 @@ int main(int argc, const char * argv[])
     // create a server socket
     ServerSocket server {machiavelli::tcp_port};
 
+	bool gameStarted = false;
+
     try {
         cerr << "server listening" << '\n';
         while (running) {
@@ -162,6 +158,14 @@ int main(int argc, const char * argv[])
                 all_threads.emplace_back(handle_client, move(client));
             });
             this_thread::sleep_for(chrono::milliseconds(100));
+
+			if (gameController.clients.size() == 2 && gameStarted == false) {
+				while (gameController.clients[1]->get_player().name == "" && gameController.clients[0]->get_player().name == "") {
+					//wacht tot beide spelers ready zijn en hun naam hebben ingevuld
+				}
+				gameController.startGame();
+				gameStarted = true;
+			}
         }
     } catch (const exception& ex) {
         cerr << ex.what() << ", resuming..." << '\n';
