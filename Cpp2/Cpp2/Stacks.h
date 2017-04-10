@@ -30,6 +30,8 @@ public:
 
 	void addCharacterCard(CharacterCard card);
 
+	void undiscardCharacterCards();
+
 private:
 	std::deque<BuildingCard> buildingCardStack;
 	std::deque<CharacterCard> characterCardStack;

@@ -63,6 +63,10 @@ void Stacks::shuffleCharacterCards()
 }
 
 BuildingCard Stacks::getBuildingCard() {
+	if (buildingCardStack.size() == 0) {
+		buildingCardStack = discardedBuildingCardStack;
+		discardedBuildingCardStack.clear();
+	}
 	BuildingCard returnValue = buildingCardStack.front();
 	buildingCardStack.pop_front();
 	return returnValue;
@@ -115,4 +119,15 @@ std::string Stacks::removeCharacterCard(int optionId) { // optionId = 0 to remov
 
 void Stacks::addCharacterCard(CharacterCard card) {
 	characterCardStack.push_back(card);
+}
+
+void Stacks::undiscardCharacterCards() {
+	deque<CharacterCard>::iterator it;
+
+	for (it = discardedCharacterCardStack.begin(); it != discardedCharacterCardStack.end(); it++)
+	{
+		characterCardStack.push_back((*it));
+	}
+
+	discardedCharacterCardStack.clear();
 }

@@ -7,6 +7,8 @@
 #include <exception>
 #include <utility>
 #include <chrono>
+#include <exception>
+
 
 GameController::GameController()
 {
@@ -72,6 +74,7 @@ void GameController::continueGame()
 			ExecuteCallCharacters();
 			killedCharacter = CharacterCard::CharacterType::None;
 			stolenCharacter = CharacterCard::CharacterType::None;
+			gameStage = CHOOSING_CHARACTERS;
 			break;
 		case ENDING:
 			ExecuteEnding();
@@ -110,7 +113,7 @@ void GameController::ExecuteChooseCharacters(const int counter) {
 				socket.write(stacks.removeCharacterCard(0) + "\r\n");
 				socket.write("Please choose one of the following characters to take for yourself this round:\r\n");
 				socket.write(stacks.getCharacterCardOptions());
-				int answer = getAnswerFromPlayer(stacks.getAmountOfCharacterCards());
+				const int answer = getAnswerFromPlayer(stacks.getAmountOfCharacterCards());
 				player.characterCards.push_back(stacks.getCharacterCard(answer));
 				socket.write("You took the " + player.characterCards.back().name);
 				socket.write("\r\n");
@@ -122,11 +125,11 @@ void GameController::ExecuteChooseCharacters(const int counter) {
 			socket.write("The other player removed a card and took one now it's your turn\r\n");
 			socket.write("Choose a card to remove: \r\n");
 			socket.write(stacks.getCharacterCardOptions());
-			int answer = getAnswerFromPlayer(stacks.getAmountOfCharacterCards());
+			const int answer = getAnswerFromPlayer(stacks.getAmountOfCharacterCards());
 			socket.write(stacks.removeCharacterCard(answer) + "\r\n");
 			socket.write("Please choose one of the following characters to take for yourself this round:\r\n");
 			socket.write(stacks.getCharacterCardOptions());
-			int secondAnswer = getAnswerFromPlayer(stacks.getAmountOfCharacterCards());
+			const int secondAnswer = getAnswerFromPlayer(stacks.getAmountOfCharacterCards());
 			player.characterCards.push_back(stacks.getCharacterCard(secondAnswer));
 			socket.write("You took the " + player.characterCards.back().name);
 			switchTurns();
@@ -156,7 +159,6 @@ void GameController::ExecuteCallCharacters() {
 		for each (std::shared_ptr<ClientInfo> client in clients) {
 
 			auto &player = client->get_player();
-			ExecuteMagier(player);
 
 			std::vector<CharacterCard>::iterator it;
 
@@ -187,16 +189,21 @@ void GameController::CleanUpAfterRound() {
 		for (it2 = player.characterCards.begin(); it2 != player.characterCards.end(); it2++)
 		{
 			stacks.addCharacterCard((*it2));
-			player.characterCards.erase(it2);
+			
 		}
+
+		player.characterCards.clear();
 	}
+
+	stacks.undiscardCharacterCards();
+	stacks.shuffleCharacterCards();
 
 }
 
 void GameController::ExecutePlayerTurn(Player & player, CharacterCard characterCard) {
 	currentTurnPlayerId = player.id;
 	std::string message = "It's " + player.name;
-	message.append("'s turn who has the " + characterCard.name);
+	message.append("'s turn who has the " + characterCard.name + "\r\n");
 	sendMessageToClients(message, 3);
 
 	if (characterCard.characterType == stolenCharacter) {
@@ -246,7 +253,7 @@ void GameController::ExecutePlayerTurn(Player & player, CharacterCard characterC
 		showStats = amountOfOptions;
 
 		sendMessageToClients(message, player.id);
-		int answer = getAnswerFromPlayer(amountOfOptions);
+		const int answer = getAnswerFromPlayer(amountOfOptions);
 
 		if (answer == usePower) {
 			PlayerUsePower(player, characterCard);
@@ -294,7 +301,7 @@ void GameController::ExecutePlayerTurn(Player & player, CharacterCard characterC
 		endTurn = amountOfOptions;
 
 		sendMessageToClients(message, player.id);
-		int answer = getAnswerFromPlayer(amountOfOptions);
+		const int answer = getAnswerFromPlayer(amountOfOptions);
 
 		if (answer == usePower) {
 			PlayerUsePower(player, characterCard);
@@ -333,37 +340,44 @@ void GameController::PlayerGetGoldOrBuilding(Player & player) {
 	message += "2: receive building\r\n";
 	sendMessageToClients(message, player.id);
 
-	int answer = getAnswerFromPlayer(2);
+	const int answer = getAnswerFromPlayer(2);
 
 	if (answer == 1) {
 		player.gold += 2;
 		sendMessageToClients("\r\n" + player.name + " received 2 gold!\r\n", 3);
 	}
 	else if (answer == 2) {
-		BuildingCard A = stacks.getBuildingCard();
-		BuildingCard B = stacks.getBuildingCard();
+		try {
+			BuildingCard A = stacks.getBuildingCard();
+			BuildingCard B = stacks.getBuildingCard();
 
-		message = "\r\n1: " + A.name;
-		message.append(" color: " + A.stringColor);
-		message.append(" cost: " + std::to_string(A.cost));
-		message.append("\r\n");
-		
-		message.append("2: " + B.name);
-		message.append(" color: " + B.stringColor);
-		message.append(" cost: " + std::to_string(B.cost));
-		message.append("\r\n");
+			message = "\r\n1: " + A.name;
+			message.append(" color: " + A.stringColor);
+			message.append(" cost: " + std::to_string(A.cost));
+			message.append("\r\n");
 
-		sendMessageToClients(message, player.id);
+			message.append("2: " + B.name);
+			message.append(" color: " + B.stringColor);
+			message.append(" cost: " + std::to_string(B.cost));
+			message.append("\r\n");
 
-		int answertwo = getAnswerFromPlayer(2);
+			sendMessageToClients(message, player.id);
 
-		if (answertwo == 1) {
-			player.buildingCards.push_back(A);
-			stacks.discardBuildingCard(B);
+			const int answertwo = getAnswerFromPlayer(2);
+
+			if (answertwo == 1) {
+				player.buildingCards.push_back(A);
+				stacks.discardBuildingCard(B);
+			}
+			else if (answertwo == 2) {
+				player.buildingCards.push_back(B);
+				stacks.discardBuildingCard(A);
+			}
+
 		}
-		else if (answertwo == 2) {
-			player.buildingCards.push_back(B);
-			stacks.discardBuildingCard(A);
+		catch (const std::exception& ex) {
+			std::string e = ex.what();
+			sendMessageToClients("\r\nERROR: " + e + "\r\n", player.id);
 		}
 
 		sendMessageToClients("\r\n" + player.name + " took a building card from the stack!\r\n", 3);
@@ -376,6 +390,7 @@ int GameController::PlayerBuildBuilding(Player & player) {
 
 	while (!done) {
 		sendMessageToClients("\r\nWhich building would you like to build?\r\n", player.id);
+		sendMessageToClients("You currently have: "+ std::to_string(player.gold) + " gold.\r\n", player.id);
 		std::string message = "\r\n";
 		std::vector<BuildingCard>::iterator it;
 
@@ -393,7 +408,7 @@ int GameController::PlayerBuildBuilding(Player & player) {
 
 		sendMessageToClients(message, player.id);
 
-		int answer = getAnswerFromPlayer(player.buildingCards.size() + 1);
+		const int answer = getAnswerFromPlayer(player.buildingCards.size() + 1);
 
 		if (answer == player.buildingCards.size() + 1) {
 			done = true;
@@ -459,7 +474,7 @@ void GameController::ExecuteMoordenaar(Player & player) {
 
 	sendMessageToClients(message, player.id);
 
-	int answer = getAnswerFromPlayer(7);
+	const int answer = getAnswerFromPlayer(7);
 
 	switch (answer) {
 	case 1:
@@ -503,8 +518,8 @@ void GameController::ExecuteDief(Player & player) {
 
 	for (int i = CharacterCard::CharacterType::Moordenaar; i != CharacterCard::CharacterType::None; i++)
 	{
-		CharacterCard::CharacterType characterType = static_cast<CharacterCard::CharacterType>(i);
-		if (characterType != CharacterCard::CharacterType::Moordenaar && characterType != killedCharacter) {
+		const CharacterCard::CharacterType characterType = static_cast<CharacterCard::CharacterType>(i);
+		if (characterType != CharacterCard::CharacterType::Moordenaar && characterType != killedCharacter && characterType != CharacterCard::CharacterType::Dief) {
 			counter++;
 			message.append(std::to_string(counter) + ": " + characters[i] + "\r\n");	
 		}
@@ -512,14 +527,14 @@ void GameController::ExecuteDief(Player & player) {
 
 	sendMessageToClients(message, player.id);
 
-	int answer = getAnswerFromPlayer(counter);
+	const int answer = getAnswerFromPlayer(counter);
 
 	counter = 0;
 
 	for (int i = CharacterCard::CharacterType::Moordenaar; i != CharacterCard::CharacterType::None; i++)
 	{
-		CharacterCard::CharacterType characterType = static_cast<CharacterCard::CharacterType>(i);
-		if (characterType != CharacterCard::CharacterType::Moordenaar && characterType != killedCharacter) {
+		const CharacterCard::CharacterType characterType = static_cast<CharacterCard::CharacterType>(i);
+		if (characterType != CharacterCard::CharacterType::Moordenaar && characterType != killedCharacter && characterType != CharacterCard::CharacterType::Dief) {
 			counter++;
 			if (counter == answer) {
 				stolenCharacter = characterType;
@@ -654,7 +669,7 @@ void GameController::ExecuteBouwmeester(Player & player) {
 
 void GameController::ExecuteCondottiere(Player & player) {
 	std::vector<BuildingCard>::iterator it;
-	int goldEarned = 1;
+	int goldEarned = 0;
 
 	for (it = player.buildingsBuilt.begin(); it != player.buildingsBuilt.end(); it++)
 	{
@@ -730,7 +745,7 @@ void GameController::PlayerShowStats(Player & player) {
 		stats.append("    ");
 		stats.append("Name: " + it1->name);
 		stats.append("    ");
-		stats.append("Color: " + it1->color);
+		stats.append("Color: " + it1->stringColor);
 		stats.append("    ");
 		stats.append("Cost: " + std::to_string(it1->cost));
 		stats.append("\r\n");
@@ -745,7 +760,7 @@ void GameController::PlayerShowStats(Player & player) {
 		stats.append("    ");
 		stats.append("Name: " + it2->name);
 		stats.append("    ");
-		stats.append("Color: " + it2->color);
+		stats.append("Color: " + it2->stringColor);
 		stats.append("    ");
 		stats.append("Cost: " + std::to_string(it2->cost));
 		stats.append("\r\n");
@@ -831,6 +846,11 @@ void GameController::handleClientInput(ClientCommand command)
 	auto clientInfo = command.get_client_info().lock();
 	auto &client = clientInfo->get_socket();
 	auto &player = clientInfo->get_player();
+
+	if (command.get_cmd() == "stats") {
+		PlayerShowStats(player);
+		return;
+	}
 
 	if (player.id == currentTurnPlayerId) {
 		playerCommand.first = command.get_cmd();
