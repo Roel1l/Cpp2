@@ -76,6 +76,7 @@ void GameController::continueGame()
 			ExecuteCallCharacters();
 			killedCharacter = CharacterCard::CharacterType::None;
 			stolenCharacter = CharacterCard::CharacterType::None;
+			thiefPlayerId = 0;
 			gameStage = CHOOSING_CHARACTERS;
 			break;
 		case ENDING:
@@ -431,6 +432,7 @@ const int GameController::PlayerBuildBuilding(Player & player) {
 				player.gold -= player.buildingCards[answer - 1].cost;
 				player.buildingCards.erase(player.buildingCards.begin() + answer - 1);
 				built++;
+				if (firstWinPlayerId == 0 && player.buildingsBuilt.size() >= buildingsToEndGame) firstWinPlayerId = player.id;
 				done = true;
 			}
 			else {
@@ -821,6 +823,8 @@ void GameController::ExecuteEnding() {
 		int pointsPlayer1 = CalculatePoints(player1);
 		int pointsPlayer2 = CalculatePoints(player2);
 
+		if (firstWinPlayerId == 1) pointsPlayer1 += 4;
+		if (firstWinPlayerId == 2) pointsPlayer2 += 4;
 
 		std::string message = "";
 		message.append(player1.name + " got: ");
@@ -843,7 +847,7 @@ void GameController::ExecuteEnding() {
 		}
 	}
 
-	sendMessageToClients("\r\nThe game has ended please type 'quit' to quit...\r\n", 3);
+	sendMessageToClients("\r\nThe game has ended please type 'exit' to quit...\r\n", 3);
 	running = false;
 }
 

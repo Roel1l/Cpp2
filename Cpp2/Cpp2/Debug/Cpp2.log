@@ -1,6 +1,5 @@
-﻿  GameController.cpp
-c:\users\rel\documents\github\cpp2\cpp2\cpp2\gamecontroller.cpp(41): warning C4018: '>=': signed/unsigned mismatch
-c:\users\rel\documents\github\cpp2\cpp2\cpp2\gamecontroller.cpp(624): warning C4018: '<=': signed/unsigned mismatch
-c:\users\rel\documents\github\cpp2\cpp2\cpp2\gamecontroller.cpp(735): warning C4018: '<=': signed/unsigned mismatch
+﻿  Stacks.cpp
+c:\users\rel\documents\github\cpp2\cpp2\cpp2\stacks.cpp(67): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+c:\users\rel\documents\github\cpp2\cpp2\cpp2\stacks.cpp(73): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
   Cpp2.vcxproj -> C:\Users\Rel\Documents\GitHub\Cpp2\Cpp2\Debug\Cpp2.exe
   Cpp2.vcxproj -> C:\Users\Rel\Documents\GitHub\Cpp2\Cpp2\Debug\Cpp2.pdb (Partial PDB)

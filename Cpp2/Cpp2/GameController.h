@@ -70,6 +70,7 @@ private:
 	Stacks stacks;
 	int currentTurnPlayerId{ 1 };
 	int round{ 0 };
+	int firstWinPlayerId{ 0 };
 
 	const bool quickChoose{ false };
 	const int buildingsToEndGame{ 1 };
