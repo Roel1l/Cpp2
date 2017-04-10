@@ -28,6 +28,8 @@ public:
 
 	std::string removeCharacterCard(int optionId);
 
+	void addCharacterCard(CharacterCard card);
+
 private:
 	std::deque<BuildingCard> buildingCardStack;
 	std::deque<CharacterCard> characterCardStack;

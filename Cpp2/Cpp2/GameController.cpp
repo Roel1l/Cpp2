@@ -71,6 +71,7 @@ void GameController::continueGame()
 			sendMessageToClients("\r\nIt's time to start calling the characters\r\n", 3);
 			ExecuteCallCharacters();
 			killedCharacter = CharacterCard::CharacterType::None;
+			stolenCharacter = CharacterCard::CharacterType::None;
 			break;
 		case ENDING:
 			ExecuteEnding();
@@ -153,7 +154,9 @@ void GameController::ExecuteCallCharacters() {
 	int callOrderId = 1;
 	while (callOrderId < 9) {
 		for each (std::shared_ptr<ClientInfo> client in clients) {
+
 			auto &player = client->get_player();
+			ExecuteMagier(player);
 
 			std::vector<CharacterCard>::iterator it;
 
@@ -171,6 +174,23 @@ void GameController::ExecuteCallCharacters() {
 	}
 
 	sendMessageToClients("Done calling the characters. Ending round...\r\n", 3);
+	CleanUpAfterRound();
+}
+
+void GameController::CleanUpAfterRound() {
+	std::vector<std::shared_ptr<ClientInfo>>::iterator it;
+	for (it = clients.begin(); it != clients.end(); it++)
+	{
+		auto &player = it->get()->get_player();
+
+		std::vector<CharacterCard>::iterator it2;
+		for (it2 = player.characterCards.begin(); it2 != player.characterCards.end(); it2++)
+		{
+			stacks.addCharacterCard((*it2));
+			player.characterCards.erase(it2);
+		}
+	}
+
 }
 
 void GameController::ExecutePlayerTurn(Player & player, CharacterCard characterCard) {
@@ -179,11 +199,26 @@ void GameController::ExecutePlayerTurn(Player & player, CharacterCard characterC
 	message.append("'s turn who has the " + characterCard.name);
 	sendMessageToClients(message, 3);
 
+	if (characterCard.characterType == stolenCharacter) {
+		int temp = player.gold;
+		player.gold = 0;
+		std::vector<std::shared_ptr<ClientInfo>>::iterator it;
+		for (it = clients.begin(); it != clients.end(); it++)
+		{
+			auto &otherPlayer = it->get()->get_player();
+			if (otherPlayer.id == thiefPlayerId) {
+				otherPlayer.gold += temp;
+				sendMessageToClients("\r\nThe thief stole from the "+ characterCard.name + "! " + otherPlayer.name + " got "+ std::to_string(temp) + " gold!\r\n", 3);
+			}
+		}
+	}
+
 	bool part1Over = false;
 	bool part2Over = false;
 	bool characterPowerUsed = false;
 	bool tookGoldOrBuilding = false;
 	bool buildBuilding = false;
+	int buildingsBuilt = 0;
 
 	while (!part1Over) {
 		sendMessageToClients("\r\nWhat would you like to do?\r\n", player.id);
@@ -266,8 +301,16 @@ void GameController::ExecutePlayerTurn(Player & player, CharacterCard characterC
 			characterPowerUsed = true;
 		}
 		if (answer == build) {
-			PlayerBuildBuilding(player);
-			buildBuilding = true;
+			if (PlayerBuildBuilding(player) > 0) {
+				buildingsBuilt++;
+				if (characterCard.characterType == CharacterCard::CharacterType::Bouwmeester) {
+					sendMessageToClients("You can build up to 3 buildings because you have the Bouwmeester!\r\n", player.id);
+					if (buildingsBuilt > 2) {
+						buildBuilding = true;
+					}
+				}
+				else buildBuilding = true;
+			}
 		}
 		if (answer == showStats) {
 			PlayerShowStats(player);
@@ -327,8 +370,9 @@ void GameController::PlayerGetGoldOrBuilding(Player & player) {
 	}
 }
 
-void GameController::PlayerBuildBuilding(Player & player) {
+int GameController::PlayerBuildBuilding(Player & player) {
 	bool done = false;
+	int built = 0;
 
 	while (!done) {
 		sendMessageToClients("\r\nWhich building would you like to build?\r\n", player.id);
@@ -360,6 +404,7 @@ void GameController::PlayerBuildBuilding(Player & player) {
 				sendMessageToClients("\r\n" + player.name + " built the " + player.buildingCards[answer - 1].name + "!\r\n", 3);
 				player.gold -= player.buildingCards[answer - 1].cost;
 				player.buildingCards.erase(player.buildingCards.begin() + answer - 1);
+				built++;
 				done = true;
 			}
 			else {
@@ -367,7 +412,8 @@ void GameController::PlayerBuildBuilding(Player & player) {
 			}
 		}
 	}
-	
+
+	return built;
 }
 
 void GameController::PlayerUsePower(Player & player, CharacterCard characterCard) {
@@ -477,6 +523,7 @@ void GameController::ExecuteDief(Player & player) {
 			counter++;
 			if (counter == answer) {
 				stolenCharacter = characterType;
+				thiefPlayerId = player.id;
 				sendMessageToClients("\r\nThe Dief stole from the " + characters[i] + "\r\n", 3);
 			}
 		}
@@ -484,26 +531,187 @@ void GameController::ExecuteDief(Player & player) {
 }
 
 void GameController::ExecuteMagier(Player & player) {
+	sendMessageToClients("\r\nMagier, what would you like to do?\r\n", player.id);
 
+	std::string message = "";
+
+	message.append("1: Switch your building cards with those of the other player.\r\n");
+	message.append("2: Switch a chosen amount of your building cards for new ones.\r\n");
+
+	sendMessageToClients(message, player.id);
+	const int answer = getAnswerFromPlayer(2);
+
+	if (answer == 1) {
+		std::vector<std::shared_ptr<ClientInfo>>::iterator it;
+		for (it = clients.begin(); it != clients.end(); it++)
+		{
+			auto &otherPlayer = it->get()->get_player();
+			if (otherPlayer.id != player.id) {
+				std::vector<BuildingCard> temp = otherPlayer.buildingCards;
+
+				otherPlayer.buildingCards = player.buildingCards;
+
+				player.buildingCards = temp;
+
+				sendMessageToClients("\r\nThe magier swapped your building cards with the other players building cards!\r\n", 3);
+			}
+		}
+	}
+	else {
+		bool done = false;
+		std::vector<BuildingCard> temp;
+
+		while (!done) {
+			std::vector<BuildingCard>::iterator it;
+			std::string options = "\r\nWhich cards would you like to swap for new ones?\r\n";
+
+			for (it = player.buildingCards.begin(); it != player.buildingCards.end(); it++)
+			{
+				options.append(std::to_string(it - player.buildingCards.begin() + 1) + ": ");
+				options.append(it->name + " color: " + it->stringColor + " cost: " + std::to_string(it->cost) + "\r\n");
+			}
+
+			options.append(std::to_string(player.buildingCards.size() + 1) + ": done\r\n");
+
+			sendMessageToClients(options, player.id);
+			const int answer2 = getAnswerFromPlayer(player.buildingCards.size() + 1);
+
+			if (answer2 <= player.buildingCards.size()) {
+				stacks.discardBuildingCard(player.buildingCards[answer2 - 1]);
+				player.buildingCards.erase(answer2 + player.buildingCards.begin() - 1);
+				temp.push_back(stacks.getBuildingCard());
+			}
+			else 
+			{
+				done = true;
+			}
+		}
+
+		player.buildingCards.insert(player.buildingCards.end(), temp.begin(), temp.end());
+		sendMessageToClients("\r\n" + player.name + " swapped some building cards with the stack!\r\n", 3);
+	}
 }
 
 void GameController::ExecuteKoning(Player & player) {
 
+	if (!player.king) {
+		player.king = true;
+		sendMessageToClients("\r\n" + player.name + " has become the Koning and may go first next round!\r\n", 3);
+		std::vector<std::shared_ptr<ClientInfo>>::iterator it;
+		for (it = clients.begin(); it != clients.end(); it++)
+		{
+			auto &otherPlayer = it->get()->get_player();
+			if (otherPlayer.id != player.id) {
+				otherPlayer.king = false;
+			}
+		}
+	}
+
+	std::vector<BuildingCard>::iterator it;
+	int goldEarned = 0;
+
+	for (it = player.buildingsBuilt.begin(); it != player.buildingsBuilt.end(); it++)
+	{
+		if (it->color == BuildingCard::Color::GEEL) goldEarned++;
+	}
+
+	player.gold += goldEarned;
+	sendMessageToClients("\r\n" + player.name + " got " + std::to_string(goldEarned) + " gold because he has " + std::to_string(goldEarned) + " yellow buildings up!\r\n", 3);
 }
 
 void GameController::ExecutePrediker(Player & player) {
+	std::vector<BuildingCard>::iterator it;
+	int goldEarned = 0;
 
+	for (it = player.buildingsBuilt.begin(); it != player.buildingsBuilt.end(); it++)
+	{
+		if (it->color == BuildingCard::Color::BLAUW) goldEarned++;
+	}
+
+	player.gold += goldEarned;
+	sendMessageToClients("\r\n" + player.name + " got " + std::to_string(goldEarned) + " gold because he has " + std::to_string(goldEarned) + " blue buildings up!\r\n", 3);
 }
 
 void GameController::ExecuteKoopman(Player & player) {
+	sendMessageToClients("\r\n" + player.name + " got 1 piece of gold because he used his koopman power!\r\n", 3);
+	std::vector<BuildingCard>::iterator it;
+	int goldEarned = 1;
 
+	for (it = player.buildingsBuilt.begin(); it != player.buildingsBuilt.end(); it++)
+	{
+		if (it->color == BuildingCard::Color::GROEN) goldEarned++;
+	}
+
+	player.gold += goldEarned;
+	sendMessageToClients("\r\n" + player.name + " got " + std::to_string(goldEarned) + " gold because he has " + std::to_string(goldEarned) + " green buildings up!\r\n", 3);
 }
 
 void GameController::ExecuteBouwmeester(Player & player) {
-
+	sendMessageToClients("\r\n" + player.name + " got 2 buildingcards because he used the bouwmeesters power!\r\n", 3);
+	player.buildingCards.push_back(stacks.getBuildingCard());
+	player.buildingCards.push_back(stacks.getBuildingCard());
 }
 
 void GameController::ExecuteCondottiere(Player & player) {
+	std::vector<BuildingCard>::iterator it;
+	int goldEarned = 1;
+
+	for (it = player.buildingsBuilt.begin(); it != player.buildingsBuilt.end(); it++)
+	{
+		if (it->color == BuildingCard::Color::ROOD) goldEarned++;
+	}
+
+	player.gold += goldEarned;
+	sendMessageToClients("\r\n" + player.name + " got " + std::to_string(goldEarned) + " gold because he has " + std::to_string(goldEarned) + " red buildings up!\r\n", 3);
+
+	std::vector<std::shared_ptr<ClientInfo>>::iterator it2;
+	for (it2 = clients.begin(); it2 != clients.end(); it2++)
+	{
+		auto &otherPlayer = it2->get()->get_player();
+		if (otherPlayer.id != player.id) {
+			if (otherPlayer.characterCards[0].characterType != CharacterCard::CharacterType::Prediker && otherPlayer.characterCards[1].characterType != CharacterCard::CharacterType::Prediker) {
+				bool done = false;
+				while (!done) {
+					sendMessageToClients("\r\nCondottiere would you like to remove any of the following buildings from the other player?\r\n", player.id);
+					std::string options = "";
+					std::vector<BuildingCard>::iterator it3;
+					for (it3 = otherPlayer.buildingsBuilt.begin(); it3 != otherPlayer.buildingsBuilt.end(); it3++)
+					{
+						options.append(std::to_string(it3 - otherPlayer.buildingsBuilt.begin() + 1) + ": ");
+						options.append(it3->name + " color: " + it3->stringColor + " cost: " + std::to_string(it3->cost) + "\r\n");
+					}
+
+					options.append(std::to_string(otherPlayer.buildingsBuilt.size() + 1) + ": done\r\n");
+
+					sendMessageToClients(options, player.id);
+					const int answer2 = getAnswerFromPlayer(otherPlayer.buildingsBuilt.size() + 1);
+
+					if (answer2 <= otherPlayer.buildingsBuilt.size()) {
+
+						if (player.gold - otherPlayer.buildingsBuilt[answer2 - 1].cost >= 0 || otherPlayer.buildingsBuilt[answer2 - 1].cost < 2) {
+							if (otherPlayer.buildingsBuilt[answer2 - 1].cost > 1) player.gold -= otherPlayer.buildingsBuilt[answer2 - 1].cost;
+							sendMessageToClients("\r\nYour " + otherPlayer.buildingsBuilt[answer2 - 1].name + " was removed by the condottiere!\r\n", otherPlayer.id);
+							sendMessageToClients("\r\nYou removed the other players " + otherPlayer.buildingsBuilt[answer2 - 1].name + " using the condottiere's power!\r\n", player.id);
+							stacks.discardBuildingCard(otherPlayer.buildingsBuilt[answer2 - 1]);
+							otherPlayer.buildingsBuilt.erase(answer2 + otherPlayer.buildingsBuilt.begin() - 1);
+						}
+						else
+						{
+							sendMessageToClients("\r\nYou don't  have enough money to remove this building.\r\n", player.id);
+						}
+
+					}
+					else
+					{
+						done = true;
+					}
+				}
+			}
+			else {
+				sendMessageToClients("\r\nThe condotierre couldn't steal from the other player because the other player has the prediker\r\n", 3);
+			}
+		}
+	}
 
 }
 

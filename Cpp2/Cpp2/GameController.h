@@ -39,9 +39,10 @@ private:
 	void ExecuteChooseCharacters(int counter);
 	void ExecuteChooseCharactersQuick();
 	void ExecuteCallCharacters();
+	void CleanUpAfterRound();
 	void ExecutePlayerTurn(Player & player, CharacterCard characterCard);
 	void PlayerGetGoldOrBuilding(Player & player);
-	void PlayerBuildBuilding(Player & player);
+	int PlayerBuildBuilding(Player & player);
 
 	void PlayerUsePower(Player & player, CharacterCard characterCard);
 	void ExecuteMoordenaar(Player & player);
@@ -63,12 +64,13 @@ private:
 
 	CharacterCard::CharacterType killedCharacter{ CharacterCard::CharacterType::None };
 	CharacterCard::CharacterType stolenCharacter{ CharacterCard::CharacterType::None };
+	int thiefPlayerId{ 0 };
 	Stacks stacks;
 	int currentTurnPlayerId{ 1 };
 	int round{ 0 };
 	bool running{ true };
 	const bool quickChoose{ true };
-	const int buildingsToEndGame{ 1 };
+	const int buildingsToEndGame{ 5 };
 	const std::vector<std::string> characters {"Moordenaar", "Dief", "Magier", "Koning", "Prediker", "Koopman", "Bouwmeester", "Condottiere", "None"};
 };
 

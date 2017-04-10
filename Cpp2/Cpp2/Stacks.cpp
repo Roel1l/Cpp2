@@ -112,3 +112,7 @@ std::string Stacks::removeCharacterCard(int optionId) { // optionId = 0 to remov
 
 	return discardedCharacterCardStack.back().name;
 }
+
+void Stacks::addCharacterCard(CharacterCard card) {
+	characterCardStack.push_back(card);
+}
