@@ -106,17 +106,15 @@ void handle_client(Socket client) // this function runs in a separate thread
                 if (socket.readline([&cmd](std::string input) { cmd=input; })) {
                     cerr << '[' << socket.get_dotted_ip() << " (" << socket.get_socket() << ") " << player.get_name() << "] " << cmd << "\r\n";
 
-                    if (cmd == "quit") {
-                        socket.write("Bye!\r\n");
-						//running = false;
-                        break; // out of game loop, will end this thread and close connection
-                    }
-                    else if (cmd == "quit_server") {
+                    if (cmd == "exit") {
                         running = false;
+						gameController.running = false;
                     }
 
                     ClientCommand command {cmd, client_info};
                     queue.put(command);
+
+
                 }
 
             } catch (const exception& ex) {

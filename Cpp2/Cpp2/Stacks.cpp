@@ -26,7 +26,7 @@ void Stacks::initBuildingCards()
 	{
 		std::vector<std::string> CardInfo = split(line, ';');
 		if (CardInfo.size() == 3) {
-			BuildingCard card(CardInfo[0], std::stoi(CardInfo[1]), CardInfo[2]);
+			const BuildingCard card(CardInfo[0], std::stoi(CardInfo[1]), CardInfo[2]);
 			buildingCardStack.push_back(card);
 		}
 	}
@@ -42,7 +42,7 @@ void Stacks::initCharacterCards()
 	{
 		std::vector<std::string> CardInfo = split(line, ';');
 		if (CardInfo.size() == 2) {
-			CharacterCard card(std::stoi(CardInfo[0]), CardInfo[1]);
+			const CharacterCard card(std::stoi(CardInfo[0]), CardInfo[1]);
 			characterCardStack.push_back(card);
 		}
 	}
@@ -62,17 +62,17 @@ void Stacks::shuffleCharacterCards()
 	std::random_shuffle(characterCardStack.begin(), characterCardStack.end());
 }
 
-BuildingCard Stacks::getBuildingCard() {
+const BuildingCard Stacks::getBuildingCard() {
 	if (buildingCardStack.size() == 0) {
 		buildingCardStack = discardedBuildingCardStack;
 		discardedBuildingCardStack.clear();
 	}
-	BuildingCard returnValue = buildingCardStack.front();
+	const BuildingCard returnValue = buildingCardStack.front();
 	buildingCardStack.pop_front();
 	return returnValue;
 }
 
-std::string Stacks::getCharacterCardOptions()
+const std::string Stacks::getCharacterCardOptions()
 {
 	std::string options = "";
 	
@@ -89,22 +89,22 @@ std::string Stacks::getCharacterCardOptions()
 	return options;
 }
 
-int Stacks::getAmountOfCharacterCards() {
+const int Stacks::getAmountOfCharacterCards() {
 	return characterCardStack.size();
 }
 
-void Stacks::discardBuildingCard(BuildingCard b) {
+void Stacks::discardBuildingCard(const BuildingCard b) {
 	discardedBuildingCardStack.push_back(b);
 }
 
-CharacterCard Stacks::getCharacterCard(int optionId) //gebruik hier het option id van getCharacterCardOptions()
+const CharacterCard Stacks::getCharacterCard(const int optionId) //gebruik hier het option id van getCharacterCardOptions()
 {
 	CharacterCard returnCard = characterCardStack[optionId - 1];
 	characterCardStack.erase(characterCardStack.begin() + optionId - 1);
 	return returnCard;
 }
 
-std::string Stacks::removeCharacterCard(int optionId) { // optionId = 0 to remove top card
+const std::string Stacks::removeCharacterCard(const int optionId) { // optionId = 0 to remove top card
 	if (optionId == 0) {
 		discardedCharacterCardStack.push_back(characterCardStack.front());
 		characterCardStack.pop_front();
@@ -117,11 +117,12 @@ std::string Stacks::removeCharacterCard(int optionId) { // optionId = 0 to remov
 	return discardedCharacterCardStack.back().name;
 }
 
-void Stacks::addCharacterCard(CharacterCard card) {
+void Stacks::addCharacterCard(const CharacterCard card) {
 	characterCardStack.push_back(card);
 }
 
 void Stacks::undiscardCharacterCards() {
+
 	deque<CharacterCard>::iterator it;
 
 	for (it = discardedCharacterCardStack.begin(); it != discardedCharacterCardStack.end(); it++)

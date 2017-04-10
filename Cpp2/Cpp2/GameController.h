@@ -20,13 +20,15 @@ public:
 
 	void init();
 
-	void handleClientInput(ClientCommand command);
+	void handleClientInput(const ClientCommand command);
 
 	void startGame();
 
 	void continueGame();
 
 	std::vector<std::shared_ptr<ClientInfo>> clients;
+
+	bool running{ true };
 
 private:
 	enum GameStage {PREPARATION, CHOOSING_CHARACTERS, CALLING_CHARACTERS, ENDING};
@@ -36,15 +38,15 @@ private:
 	void switchTurns() { currentTurnPlayerId = currentTurnPlayerId == 1 ? 2 : 1; };
 
 	void ExecutePreparation();
-	void ExecuteChooseCharacters(int counter);
+	void ExecuteChooseCharacters(const int counter);
 	void ExecuteChooseCharactersQuick();
 	void ExecuteCallCharacters();
 	void CleanUpAfterRound();
-	void ExecutePlayerTurn(Player & player, CharacterCard characterCard);
+	void ExecutePlayerTurn(Player & player, const CharacterCard characterCard);
 	void PlayerGetGoldOrBuilding(Player & player);
-	int PlayerBuildBuilding(Player & player);
+	const int PlayerBuildBuilding(Player & player);
 
-	void PlayerUsePower(Player & player, CharacterCard characterCard);
+	void PlayerUsePower(Player & player, const CharacterCard characterCard);
 	void ExecuteMoordenaar(Player & player);
 	void ExecuteDief(Player & player);
 	void ExecuteMagier(Player & player);
@@ -57,8 +59,8 @@ private:
 	void PlayerShowStats(Player & player);
 	void ExecuteEnding();
 	int CalculatePoints(Player & player);
-	void sendMessageToClients(std::string message, int playerId);
-	int getAnswerFromPlayer(int amountOfOptions);
+	void sendMessageToClients(const std::string message, const int playerId);
+	const int getAnswerFromPlayer(const int amountOfOptions);
 
 	std::pair<std::string, int> playerCommand; //links is het bericht en rechts is het playerId van wie het bericht komt
 
@@ -68,9 +70,9 @@ private:
 	Stacks stacks;
 	int currentTurnPlayerId{ 1 };
 	int round{ 0 };
-	bool running{ true };
-	const bool quickChoose{ true };
-	const int buildingsToEndGame{ 5 };
+
+	const bool quickChoose{ false };
+	const int buildingsToEndGame{ 1 };
 	const std::vector<std::string> characters {"Moordenaar", "Dief", "Magier", "Koning", "Prediker", "Koopman", "Bouwmeester", "Condottiere", "None"};
 };
 

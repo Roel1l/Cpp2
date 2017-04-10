@@ -8,6 +8,7 @@
 #include <utility>
 #include <chrono>
 #include <exception>
+#include <algorithm> 
 
 
 GameController::GameController()
@@ -31,8 +32,10 @@ void GameController::startGame()
 		std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 		sendMessageToClients("\r\n2 Players have been found starting game!\r\n", 3);
 
-		clients[0]->get_player().king = true;
-		
+		std::for_each(clients.begin(), clients.end(), [](std::shared_ptr<ClientInfo>& elem) {
+			if(elem->get_player().id == 1) elem->get_player().king = true;
+		});
+
 		while (running) {
 			if (clients.size() >= 2) {
 				if (clients[0]->get_player().buildingsBuilt.size() >= buildingsToEndGame || clients[1]->get_player().buildingsBuilt.size() >= buildingsToEndGame) {
@@ -40,7 +43,6 @@ void GameController::startGame()
 				}
 			}
 			continueGame();
-
 		}
 }
 
@@ -85,7 +87,7 @@ void GameController::continueGame()
 }
 
 void GameController::ExecutePreparation() {
-	for each (std::shared_ptr<ClientInfo> client in clients)
+	for each (const std::shared_ptr<ClientInfo> client in clients)
 	{
 		auto &socket = client->get_socket();
 		auto &player = client->get_player();
@@ -100,10 +102,12 @@ void GameController::ExecutePreparation() {
 }
 
 void GameController::ExecuteChooseCharacters(const int counter) {
-	for each (std::shared_ptr<ClientInfo> client in clients)
+	std::vector<std::shared_ptr<ClientInfo>>::iterator it;
+
+	for (it = clients.begin(); it != clients.end(); it++)
 	{
-		auto &socket = client->get_socket();
-		auto &player = client->get_player();
+		auto &socket = it->get()->get_socket();
+		auto &player = it->get()->get_player();
 
 		if (counter == 1) {
 			if (player.king) {
@@ -114,6 +118,7 @@ void GameController::ExecuteChooseCharacters(const int counter) {
 				socket.write("Please choose one of the following characters to take for yourself this round:\r\n");
 				socket.write(stacks.getCharacterCardOptions());
 				const int answer = getAnswerFromPlayer(stacks.getAmountOfCharacterCards());
+				if( answer == 0 )return;
 				player.characterCards.push_back(stacks.getCharacterCard(answer));
 				socket.write("You took the " + player.characterCards.back().name);
 				socket.write("\r\n");
@@ -126,12 +131,14 @@ void GameController::ExecuteChooseCharacters(const int counter) {
 			socket.write("Choose a card to remove: \r\n");
 			socket.write(stacks.getCharacterCardOptions());
 			const int answer = getAnswerFromPlayer(stacks.getAmountOfCharacterCards());
+			if (answer == 0)return;
 			socket.write(stacks.removeCharacterCard(answer) + "\r\n");
 			socket.write("Please choose one of the following characters to take for yourself this round:\r\n");
 			socket.write(stacks.getCharacterCardOptions());
 			const int secondAnswer = getAnswerFromPlayer(stacks.getAmountOfCharacterCards());
+			if (answer == 0)return;
 			player.characterCards.push_back(stacks.getCharacterCard(secondAnswer));
-			socket.write("You took the " + player.characterCards.back().name);
+			socket.write("You took the " + player.characterCards.back().name + "\r\n");
 			switchTurns();
 			return;
 		}
@@ -141,7 +148,7 @@ void GameController::ExecuteChooseCharacters(const int counter) {
 void GameController::ExecuteChooseCharactersQuick() {
 	sendMessageToClients("\r\nQuickChoose is turned on both players are given their characters cards\r\n", 3);
 
-	for each (std::shared_ptr<ClientInfo> client in clients)
+	for each (const std::shared_ptr<ClientInfo> client in clients)
 	{
 		auto &socket = client->get_socket();
 		auto &player = client->get_player();
@@ -156,7 +163,7 @@ void GameController::ExecuteChooseCharactersQuick() {
 void GameController::ExecuteCallCharacters() {
 	int callOrderId = 1;
 	while (callOrderId < 9) {
-		for each (std::shared_ptr<ClientInfo> client in clients) {
+		for each (const std::shared_ptr<ClientInfo> client in clients) {
 
 			auto &player = client->get_player();
 
@@ -189,7 +196,6 @@ void GameController::CleanUpAfterRound() {
 		for (it2 = player.characterCards.begin(); it2 != player.characterCards.end(); it2++)
 		{
 			stacks.addCharacterCard((*it2));
-			
 		}
 
 		player.characterCards.clear();
@@ -200,7 +206,7 @@ void GameController::CleanUpAfterRound() {
 
 }
 
-void GameController::ExecutePlayerTurn(Player & player, CharacterCard characterCard) {
+void GameController::ExecutePlayerTurn(Player & player, const CharacterCard characterCard) {
 	currentTurnPlayerId = player.id;
 	std::string message = "It's " + player.name;
 	message.append("'s turn who has the " + characterCard.name + "\r\n");
@@ -254,6 +260,7 @@ void GameController::ExecutePlayerTurn(Player & player, CharacterCard characterC
 
 		sendMessageToClients(message, player.id);
 		const int answer = getAnswerFromPlayer(amountOfOptions);
+		if (answer == 0)return;
 
 		if (answer == usePower) {
 			PlayerUsePower(player, characterCard);
@@ -302,6 +309,7 @@ void GameController::ExecutePlayerTurn(Player & player, CharacterCard characterC
 
 		sendMessageToClients(message, player.id);
 		const int answer = getAnswerFromPlayer(amountOfOptions);
+		if (answer == 0)return;
 
 		if (answer == usePower) {
 			PlayerUsePower(player, characterCard);
@@ -341,6 +349,7 @@ void GameController::PlayerGetGoldOrBuilding(Player & player) {
 	sendMessageToClients(message, player.id);
 
 	const int answer = getAnswerFromPlayer(2);
+	if (answer == 0)return;
 
 	if (answer == 1) {
 		player.gold += 2;
@@ -348,8 +357,8 @@ void GameController::PlayerGetGoldOrBuilding(Player & player) {
 	}
 	else if (answer == 2) {
 		try {
-			BuildingCard A = stacks.getBuildingCard();
-			BuildingCard B = stacks.getBuildingCard();
+			const BuildingCard A = stacks.getBuildingCard();
+			const BuildingCard B = stacks.getBuildingCard();
 
 			message = "\r\n1: " + A.name;
 			message.append(" color: " + A.stringColor);
@@ -364,6 +373,7 @@ void GameController::PlayerGetGoldOrBuilding(Player & player) {
 			sendMessageToClients(message, player.id);
 
 			const int answertwo = getAnswerFromPlayer(2);
+			if (answertwo == 0) return;
 
 			if (answertwo == 1) {
 				player.buildingCards.push_back(A);
@@ -384,7 +394,7 @@ void GameController::PlayerGetGoldOrBuilding(Player & player) {
 	}
 }
 
-int GameController::PlayerBuildBuilding(Player & player) {
+const int GameController::PlayerBuildBuilding(Player & player) {
 	bool done = false;
 	int built = 0;
 
@@ -409,6 +419,7 @@ int GameController::PlayerBuildBuilding(Player & player) {
 		sendMessageToClients(message, player.id);
 
 		const int answer = getAnswerFromPlayer(player.buildingCards.size() + 1);
+		if (answer == 0) return 0;
 
 		if (answer == player.buildingCards.size() + 1) {
 			done = true;
@@ -431,7 +442,7 @@ int GameController::PlayerBuildBuilding(Player & player) {
 	return built;
 }
 
-void GameController::PlayerUsePower(Player & player, CharacterCard characterCard) {
+void GameController::PlayerUsePower(Player & player, const CharacterCard characterCard) {
 	switch (characterCard.characterType) {
 	case CharacterCard::CharacterType::Moordenaar:
 		ExecuteMoordenaar(player);
@@ -475,6 +486,7 @@ void GameController::ExecuteMoordenaar(Player & player) {
 	sendMessageToClients(message, player.id);
 
 	const int answer = getAnswerFromPlayer(7);
+	if (answer == 0)return;
 
 	switch (answer) {
 	case 1:
@@ -528,6 +540,7 @@ void GameController::ExecuteDief(Player & player) {
 	sendMessageToClients(message, player.id);
 
 	const int answer = getAnswerFromPlayer(counter);
+	if (answer == 0)return;
 
 	counter = 0;
 
@@ -555,6 +568,7 @@ void GameController::ExecuteMagier(Player & player) {
 
 	sendMessageToClients(message, player.id);
 	const int answer = getAnswerFromPlayer(2);
+	if (answer == 0)return;
 
 	if (answer == 1) {
 		std::vector<std::shared_ptr<ClientInfo>>::iterator it;
@@ -590,6 +604,7 @@ void GameController::ExecuteMagier(Player & player) {
 
 			sendMessageToClients(options, player.id);
 			const int answer2 = getAnswerFromPlayer(player.buildingCards.size() + 1);
+			if (answer2 == 0)return;
 
 			if (answer2 <= player.buildingCards.size()) {
 				stacks.discardBuildingCard(player.buildingCards[answer2 - 1]);
@@ -700,6 +715,7 @@ void GameController::ExecuteCondottiere(Player & player) {
 
 					sendMessageToClients(options, player.id);
 					const int answer2 = getAnswerFromPlayer(otherPlayer.buildingsBuilt.size() + 1);
+					if (answer2 == 0)return;
 
 					if (answer2 <= otherPlayer.buildingsBuilt.size()) {
 
@@ -841,7 +857,7 @@ int GameController::CalculatePoints(Player & player) {
 	return points;
 }
 
-void GameController::handleClientInput(ClientCommand command)
+void GameController::handleClientInput(const ClientCommand command)
 {
 	auto clientInfo = command.get_client_info().lock();
 	auto &client = clientInfo->get_socket();
@@ -851,7 +867,7 @@ void GameController::handleClientInput(ClientCommand command)
 		PlayerShowStats(player);
 		return;
 	}
-
+	
 	if (player.id == currentTurnPlayerId) {
 		playerCommand.first = command.get_cmd();
 		playerCommand.second = player.id;
@@ -873,11 +889,11 @@ inline bool isInteger(const std::string & s)
 	return (*p == 0);
 }
 
-int GameController::getAnswerFromPlayer(int amountOfOptions) {
+const int GameController::getAnswerFromPlayer(const int amountOfOptions) {
 	bool waiting = true;
 	int answer = 0;
 
-	while (waiting) {
+	while (waiting && running) {
 		if (playerCommand.first != "" && playerCommand.second == currentTurnPlayerId) {
 			if (isInteger(playerCommand.first)) {
 
@@ -903,34 +919,21 @@ int GameController::getAnswerFromPlayer(int amountOfOptions) {
 	return answer;
 }
 
-void GameController::sendMessageToClients(std::string message, int playerId)
+void GameController::sendMessageToClients(const std::string message, const int playerId)
 {
 	std::vector<std::shared_ptr<ClientInfo>>::iterator it;
 
 	for (it = clients.begin(); it != clients.end(); it++)
 	{
-		auto &socket = it->get()->get_socket();
-		auto &player = it->get()->get_player();
+		const auto &socket = it->get()->get_socket();
+		const auto &player = it->get()->get_player();
 
-		if (playerId == player.id) {
+		if (playerId == player.id && running) {
 			socket.write(message);
 		}
-		else if (playerId > 2) {
+		else if (playerId > 2 && running) {
 			socket.write(message); //Als het playerId hoger dan 2 is krijgen alle clients het bericht
 		}
 	}
-
-	//for each (std::shared_ptr<ClientInfo> client in clients)
-	//{
-	//	auto &socket = client->get_socket();
-	//	auto &player = client->get_player();
-
-	//	if (playerId == player.id) {
-	//		socket.write(message);
-	//	}
-	//	else if (playerId > 2) {
-	//		socket.write(message); //Als het playerId hoger dan 2 is krijgen alle clients het bericht
-	//	}
-	//}
 }
 

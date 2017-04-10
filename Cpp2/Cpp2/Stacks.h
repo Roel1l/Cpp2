@@ -16,19 +16,19 @@ public:
 	void shuffleBuildingCards();
 	void shuffleCharacterCards();
 
-	BuildingCard getBuildingCard();
+	const BuildingCard getBuildingCard();
 
-	std::string getCharacterCardOptions();
+	const std::string getCharacterCardOptions();
 
-	int getAmountOfCharacterCards();
+	const int getAmountOfCharacterCards();
 
-	void discardBuildingCard(BuildingCard b);
+	void discardBuildingCard(const BuildingCard b);
 
-	CharacterCard getCharacterCard(int optionId);
+	const CharacterCard getCharacterCard(const int optionId);
 
-	std::string removeCharacterCard(int optionId);
+	const std::string removeCharacterCard(const int optionId);
 
-	void addCharacterCard(CharacterCard card);
+	void addCharacterCard(const CharacterCard card);
 
 	void undiscardCharacterCards();
 
