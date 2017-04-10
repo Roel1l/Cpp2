@@ -26,8 +26,14 @@ void Stacks::initBuildingCards()
 	{
 		std::vector<std::string> CardInfo = split(line, ';');
 		if (CardInfo.size() == 3) {
-			const BuildingCard card(CardInfo[0], std::stoi(CardInfo[1]), CardInfo[2]);
-			buildingCardStack.push_back(card);
+			try {
+				const BuildingCard card(CardInfo[0], std::stoi(CardInfo[1]), CardInfo[2]);
+				buildingCardStack.push_back(card);
+			}
+			catch (const std::exception& ex) {
+				std::string e = ex.what();
+				throw ex;
+			}
 		}
 	}
 
@@ -42,8 +48,14 @@ void Stacks::initCharacterCards()
 	{
 		std::vector<std::string> CardInfo = split(line, ';');
 		if (CardInfo.size() == 2) {
-			const CharacterCard card(std::stoi(CardInfo[0]), CardInfo[1]);
-			characterCardStack.push_back(card);
+			try {
+				const CharacterCard card(std::stoi(CardInfo[0]), CardInfo[1]);
+				characterCardStack.push_back(card);
+			}
+			catch (const std::exception& ex) {
+				std::string e = ex.what();
+				throw ex;
+			}
 		}
 	}
 

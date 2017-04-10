@@ -56,7 +56,7 @@ void GameController::continueGame()
 			break;
 		case CHOOSING_CHARACTERS:
 		{
-			sendMessageToClients("\r\nStarting round " + std::to_string(round), 3);
+			sendMessageToClients("\r\nStarting next round...\r\n", 3);
 			sendMessageToClients("\r\n", 3);
 			if (!quickChoose) {
 				int counter = 1;
@@ -530,10 +530,18 @@ void GameController::ExecuteDief(Player & player) {
 
 	for (int i = CharacterCard::CharacterType::Moordenaar; i != CharacterCard::CharacterType::None; i++)
 	{
-		const CharacterCard::CharacterType characterType = static_cast<CharacterCard::CharacterType>(i);
-		if (characterType != CharacterCard::CharacterType::Moordenaar && characterType != killedCharacter && characterType != CharacterCard::CharacterType::Dief) {
-			counter++;
-			message.append(std::to_string(counter) + ": " + characters[i] + "\r\n");	
+		try {
+			const CharacterCard::CharacterType characterType = static_cast<CharacterCard::CharacterType>(i);
+
+			if (characterType != CharacterCard::CharacterType::Moordenaar && characterType != killedCharacter && characterType != CharacterCard::CharacterType::Dief) {
+				counter++;
+				message.append(std::to_string(counter) + ": " + characters[i] + "\r\n");
+			}
+		}
+		catch (const std::exception& ex) {
+			std::string e = ex.what();
+			sendMessageToClients("\r\nERROR: " + e + "\r\n", player.id);
+			throw ex;
 		}
 	}
 
@@ -546,14 +554,21 @@ void GameController::ExecuteDief(Player & player) {
 
 	for (int i = CharacterCard::CharacterType::Moordenaar; i != CharacterCard::CharacterType::None; i++)
 	{
-		const CharacterCard::CharacterType characterType = static_cast<CharacterCard::CharacterType>(i);
-		if (characterType != CharacterCard::CharacterType::Moordenaar && characterType != killedCharacter && characterType != CharacterCard::CharacterType::Dief) {
-			counter++;
-			if (counter == answer) {
-				stolenCharacter = characterType;
-				thiefPlayerId = player.id;
-				sendMessageToClients("\r\nThe Dief stole from the " + characters[i] + "\r\n", 3);
+		try {
+			const CharacterCard::CharacterType characterType = static_cast<CharacterCard::CharacterType>(i);
+			if (characterType != CharacterCard::CharacterType::Moordenaar && characterType != killedCharacter && characterType != CharacterCard::CharacterType::Dief) {
+				counter++;
+				if (counter == answer) {
+					stolenCharacter = characterType;
+					thiefPlayerId = player.id;
+					sendMessageToClients("\r\nThe Dief stole from the " + characters[i] + "\r\n", 3);
+				}
 			}
+		}
+		catch (const std::exception& ex) {
+			std::string e = ex.what();
+			sendMessageToClients("\r\nERROR: " + e + "\r\n", player.id);
+			throw ex;
 		}
 	}
 }
